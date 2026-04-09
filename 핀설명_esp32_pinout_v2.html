@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESP32 확장 쉴드 핀 배열</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; background: #f4f6f8; color: #222; padding: 16px; }
+  h1 { text-align: center; font-size: 20px; font-weight: 700; margin-bottom: 4px; color: #1a1a2e; }
+  .subtitle { text-align: center; font-size: 12px; color: #666; margin-bottom: 12px; }
+
+  /* 범례 */
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 14px; }
+  .leg { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; }
+  .leg-dot { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; }
+
+  /* 메인 레이아웃: 보드 + 좌우 테이블 */
+  .main-layout { display: flex; gap: 12px; align-items: flex-start; justify-content: center; }
+
+  /* 테이블 영역 */
+  .table-wrap { flex: 1; min-width: 0; }
+  .table-wrap h2 { font-size: 14px; font-weight: 700; margin-bottom: 6px; padding: 5px 10px;
+                   border-radius: 6px; text-align: center; color: #fff; }
+  .table-wrap.left-wrap h2  { background: #1a1a2e; }
+  .table-wrap.right-wrap h2 { background: #2d5a27; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12px; background: #fff;
+          border-radius: 8px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,.1); }
+  thead tr { background: #e8e8e8; }
+  thead th { padding: 7px 8px; text-align: left; font-size: 12px; font-weight: 700; color: #333; }
+  tbody tr { border-bottom: 1px solid #eee; transition: background .12s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #f1f8e9; }
+  tbody tr.row-active { background: #fff9c4 !important; box-shadow: inset 3px 0 0 #f9a825; }
+  td { padding: 6px 8px; vertical-align: middle; line-height: 1.4; }
+  td:first-child { width: 56px; font-weight: 700; font-size: 13px; }
+  td:nth-child(2) { width: 64px; }
+  .badge { display: inline-block; padding: 1px 7px; border-radius: 20px; font-size: 10px;
+           font-weight: 700; color: #fff; white-space: nowrap; }
+
+  /* 보드 중앙 */
+  .board-center { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+  .board-wrap { display: flex; align-items: stretch; gap: 0; }
+  .pin-col { display: flex; flex-direction: column; gap: 4px; }
+  .pin-col.left { align-items: flex-end; }
+  .pin-col.right { align-items: flex-start; }
+
+  .pin { display: flex; align-items: center; gap: 5px; cursor: pointer; border-radius: 5px;
+         padding: 2px 6px; border: 2px solid transparent; transition: all .12s; user-select: none; }
+  .pin:hover { background: #e8f5e9; }
+  .pin.active { background: #fff9c4; border-color: #f9a825; box-shadow: 0 0 6px #f9a82555; }
+  .pin-col.left .pin { flex-direction: row-reverse; }
+  .dot { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 3px rgba(0,0,0,.3); }
+  .pin-label { font-size: 13px; font-weight: 700; min-width: 48px; text-align: right; }
+  .pin-col.right .pin-label { text-align: left; }
+
+  .esp-body { width: 100px; background: #2d5a27; border-radius: 10px; display: flex;
+              flex-direction: column; align-items: center; justify-content: center;
+              gap: 5px; padding: 10px 6px; flex-shrink: 0; }
+  .esp-title { color: #fff; font-size: 10px; font-weight: 700; text-align: center; line-height: 1.5; }
+  .esp-chip { background: #1a3a16; border-radius: 5px; width: 72px; height: 42px;
+              display: flex; align-items: center; justify-content: center; }
+  .esp-chip-text { color: #7dbf6e; font-size: 9px; font-weight: 600; text-align: center; line-height: 1.5; }
+  .usb-rect { background: #555; border-radius: 3px; width: 24px; height: 8px; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<h1>ESP32 확장 쉴드 핀 배열</h1>
+<p class="subtitle">SunFounder ESP32 스타터 키트 기준 · 핀을 클릭하면 설명이 강조됩니다</p>
+
+<div class="legend">
+  <div class="leg"><div class="leg-dot" style="background:#1a7a1a"></div>출력(OUTPUT)</div>
+  <div class="leg"><div class="leg-dot" style="background:#FF8C00"></div>입력(INPUT)</div>
+  <div class="leg"><div class="leg-dot" style="background:#06D6A0"></div>I2C 통신</div>
+  <div class="leg"><div class="leg-dot" style="background:#FFD166"></div>⚠ 주의</div>
+  <div class="leg"><div class="leg-dot" style="background:#EF476F"></div>사용 금지</div>
+  <div class="leg"><div class="leg-dot" style="background:#aaa"></div>전원/GND</div>
+</div>
+
+<div class="main-layout">
+
+  <!-- 왼쪽 테이블 -->
+  <div class="table-wrap left-wrap">
+    <h2>◀ 왼쪽 핀</h2>
+    <table>
+      <thead><tr><th>핀</th><th>종류</th><th>설명</th></tr></thead>
+      <tbody id="left-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- 가운데 보드 -->
+  <div class="board-center">
+    <div class="board-wrap">
+      <div class="pin-col left" id="left"></div>
+      <div class="esp-body">
+        <div class="esp-title">ESP32<br>WROOM-32</div>
+        <div class="esp-chip"><div class="esp-chip-text">SunFounder<br>확장 쉴드</div></div>
+        <div class="usb-rect"></div>
+      </div>
+      <div class="pin-col right" id="right"></div>
+    </div>
+  </div>
+
+  <!-- 오른쪽 테이블 -->
+  <div class="table-wrap right-wrap">
+    <h2>오른쪽 핀 ▶</h2>
+    <table>
+      <thead><tr><th>핀</th><th>종류</th><th>설명</th></tr></thead>
+      <tbody id="right-tbody"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+const OUT  = '#1a7a1a';
+const IN   = '#FF8C00';
+const I2C  = '#06D6A0';
+const WARN = '#FFD166';
+const BAN  = '#EF476F';
+const PWR  = '#aaaaaa';
+
+const kindColor = {
+  '전원':'#888','GND':'#888','출력':'#1a7a1a','입력':'#FF8C00',
+  '입력전용':'#c45f00','I2C':'#04a077','⚠주의':'#cc8800','금지':'#c0143c'
+};
+
+const leftData = [
+  {l:'3V3',  c:PWR,  kind:'전원',    desc:'3.3V 전원 — 센서 VCC 연결'},
+  {l:'GND',  c:PWR,  kind:'GND',    desc:'접지 — 모든 부품 GND 연결'},
+  {l:'IO15', c:OUT,  kind:'출력',   desc:'일반 GPIO — 버저, LED 자유 사용'},
+  {l:'IO2',  c:OUT,  kind:'출력',   desc:'내장 LED 핀 — LED 테스트 기본'},
+  {l:'IO0',  c:WARN, kind:'⚠주의',  desc:'BOOT 핀 — 부팅 시 사용 자제'},
+  {l:'IO4',  c:OUT,  kind:'출력',   desc:'일반 GPIO — 디지털 입출력 가능'},
+  {l:'IO5',  c:OUT,  kind:'출력',   desc:'일반 GPIO — 자유 사용 가능'},
+  {l:'IO18', c:OUT,  kind:'출력',   desc:'DC 모터 InA 연결 추천'},
+  {l:'IO19', c:OUT,  kind:'출력',   desc:'DC 모터 InB 연결 추천'},
+  {l:'IO21', c:I2C,  kind:'I2C',   desc:'I2C SDA — LCD·OLED 고정 (변경 금지)'},
+  {l:'RXD',  c:BAN,  kind:'금지',   desc:'Thonny 전용(IO3) — 절대 사용 금지'},
+  {l:'TXD',  c:BAN,  kind:'금지',   desc:'Thonny 전용(IO1) — 절대 사용 금지'},
+  {l:'IO22', c:I2C,  kind:'I2C',   desc:'I2C SCL — LCD·OLED 고정 (변경 금지)'},
+  {l:'IO23', c:OUT,  kind:'출력',   desc:'네오픽셀 DIN 연결 추천'},
+];
+
+const rightData = [
+  {l:'5V',   c:PWR,  kind:'전원',    desc:'5V 전원 — USB 전원과 동일'},
+  {l:'GND',  c:PWR,  kind:'GND',    desc:'접지 — 모든 부품 GND 연결'},
+  {l:'IO13', c:OUT,  kind:'출력',   desc:'서보모터 PWM 신호 연결 추천'},
+  {l:'IO12', c:WARN, kind:'⚠주의',  desc:'부팅 시 HIGH이면 오류 — 주의'},
+  {l:'IO14', c:OUT,  kind:'출력',   desc:'일반 GPIO — 자유 사용 가능'},
+  {l:'IO27', c:OUT,  kind:'출력',   desc:'RGB LED 파랑(B) 연결'},
+  {l:'IO26', c:OUT,  kind:'출력',   desc:'RGB LED 초록(G) 연결'},
+  {l:'IO25', c:OUT,  kind:'출력',   desc:'RGB LED 빨강(R) 연결'},
+  {l:'IO33', c:IN,   kind:'입력',   desc:'ADC 아날로그 또는 디지털 입력'},
+  {l:'IO32', c:IN,   kind:'입력',   desc:'터치 센서 ADC 입력 추천'},
+  {l:'I35',  c:IN,   kind:'입력전용', desc:'입력 전용 ADC — 출력 불가'},
+  {l:'I34',  c:IN,   kind:'입력전용', desc:'입력 전용 ADC — 출력 불가'},
+  {l:'I39',  c:IN,   kind:'입력전용', desc:'입력 전용 ADC — 출력 불가'},
+  {l:'I36',  c:IN,   kind:'입력전용', desc:'입력 전용 ADC — 출력 불가'},
+];
+
+function makePin(p, side) {
+  const div = document.createElement('div');
+  div.className = 'pin';
+  div.dataset.label = p.l;
+  div.dataset.side = side;
+  const dot = document.createElement('div');
+  dot.className = 'dot';
+  dot.style.background = p.c;
+  const lbl = document.createElement('div');
+  lbl.className = 'pin-label';
+  lbl.textContent = p.l;
+  div.appendChild(dot);
+  div.appendChild(lbl);
+  div.addEventListener('click', () => {
+    document.querySelectorAll('.pin').forEach(e => e.classList.remove('active'));
+    document.querySelectorAll('tbody tr').forEach(e => e.classList.remove('row-active'));
+    div.classList.add('active');
+    const row = document.getElementById('row-' + p.l + '-' + side);
+    if (row) {
+      row.classList.add('row-active');
+      row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  });
+  return div;
+}
+
+function makeRow(p, side) {
+  const tr = document.createElement('tr');
+  tr.id = 'row-' + p.l + '-' + side;
+  const bg = kindColor[p.kind] || '#888';
+  tr.innerHTML = `
+    <td>${p.l}</td>
+    <td><span class="badge" style="background:${bg}">${p.kind}</span></td>
+    <td>${p.desc}</td>
+  `;
+  tr.addEventListener('click', () => {
+    document.querySelectorAll('.pin').forEach(e => e.classList.remove('active'));
+    document.querySelectorAll('tbody tr').forEach(e => e.classList.remove('row-active'));
+    tr.classList.add('row-active');
+    const pin = document.querySelector(`.pin[data-label="${p.l}"][data-side="${side}"]`);
+    if (pin) pin.classList.add('active');
+  });
+  return tr;
+}
+
+const lc = document.getElementById('left');
+const rc = document.getElementById('right');
+const ltb = document.getElementById('left-tbody');
+const rtb = document.getElementById('right-tbody');
+
+leftData.forEach(p  => { lc.appendChild(makePin(p,'left'));  ltb.appendChild(makeRow(p,'left'));  });
+rightData.forEach(p => { rc.appendChild(makePin(p,'right')); rtb.appendChild(makeRow(p,'right')); });
+</script>
+</body>
+</html>
